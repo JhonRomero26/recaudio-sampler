@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dawn-pink-200 text-dawn-pink-900;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-gray-100;
+  }
+}
+
+@layer components {
+  .container {
+    @apply max-w-xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn {
+    @apply border border-dawn-pink-600 text-dawn-pink-600 hover:bg-dawn-pink-600 hover:text-white bg-transparent inline-flex items-center justify-center py-2 px-4 rounded transition-colors;
+  }
+
+  .btn-icon {
+    @apply p-4 inline-flex rounded-full;
+  }
+}

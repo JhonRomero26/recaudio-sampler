@@ -1,0 +1,6 @@
+export * from './PlayIcon'
+export * from './PauseIcon'
+export * from './SquareIcon'
+export * from './DownloadIcon'
+export * from './MicrophoneIcon'
+export * from './MicrophoneOffIcon'

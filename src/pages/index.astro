@@ -1,16 +1,81 @@
 ---
-
+import { AudioRecord } from "@/components/react/AudioRecord";
+import Layout from "../layouts/Layout.astro";
+import { AudioList } from "@/components/react/AudioList";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout
+	title=""
+	description="Astronauts are amazing."
+>
+
+	<section>
+		<h1 class="text-dawn-pink-950 text-balance text-5xl font-bold text-center">Recaudio Sampler</h1>
+
+		<AudioRecord client:load />
+		
+		<AudioList client:load />
+
+	</section>
+
+	<div id="audios"></div>
+
+</Layout>
+
+
+<script>
+	import { AudioRecorder } from "@/utils/AudioRecorder"
+	const recorder = new AudioRecorder()
+	const $record = document.querySelector("#record")
+	const $stop = document.querySelector("#stop")
+	const $cancel = document.querySelector("#cancel")
+	const $download = document.querySelector("#download")
+	const $audios = document.querySelector("#audios")
+	const audioBlobs: Blob[] = []
+
+	const createAudioElement = (src: string) => {
+		const audio = document.createElement("audio")
+		audio.src = src
+		audio.controls = true
+		return audio
+	}
+
+	$record?.addEventListener("click", () => {
+		$record?.classList.add("opacity-0", "hidden")
+		$stop?.classList.remove("opacity-0", "hidden")
+		$cancel?.classList.remove("opacity-0", "hidden")
+
+		recorder.start()
+			.then(() => console.log("Recording..."))
+	})
+
+	$stop?.addEventListener("click", async () => {
+		$record?.classList.remove("opacity-0", "hidden")
+		$stop?.classList.add("opacity-0", "hidden")
+		$cancel?.classList.add("opacity-0", "hidden")
+
+		const audioBlob = await recorder.stop()
+		audioBlobs.push(audioBlob)
+		const audioURL = URL.createObjectURL(audioBlob)
+		const $el = createAudioElement(audioURL)
+
+		$audios?.appendChild($el)
+	})
+
+	$cancel?.addEventListener("click", () => {
+		$record?.classList.remove("opacity-0", "hidden")
+		$stop?.classList.add("opacity-0", "hidden")
+		$cancel?.classList.add("opacity-0", "hidden")
+
+		recorder.cancel()
+	})
+
+	$download?.addEventListener("click", () => {
+		// if (!audioBlob) return
+		// const url = URL.createObjectURL(audioBlob)
+		// const link = document.createElement("a")
+		// link.href = url
+		// link.download = "recording.webm"
+		// link.click()
+	})
+</script>
