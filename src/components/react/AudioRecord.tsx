@@ -1,11 +1,5 @@
-import {
-  MicrophoneIcon,
-  PauseIcon,
-  PlayIcon,
-  SquareIcon,
-} from "@/components/icons";
+import { MicrophoneIcon, SquareIcon } from "@/components/icons";
 import { useRecorderStore } from "@/store/useRecorderStore";
-import { AudioRecorder } from "@/utils/AudioRecorder";
 import clsx from "clsx";
 import { useRef } from "react";
 
@@ -17,39 +11,60 @@ export function AudioRecord() {
     setAudiosRecorded,
     setIsRecording,
   } = useRecorderStore((store) => store);
-  const duration = useRef<number>(2000);
-  const recordingTimes = useRef<number>(100);
-  const batchs = useRef<number>(25);
-  const names = useRef<string[]>([
-    "avanza",
-    "adelante",
-    "atras",
-    "frena",
-    "izquierda",
-    "derecha",
-    "reversa",
-  ]);
-  const times = useRef<number>(0);
+
+  const recordingProps = useRef({
+    duration: 2000,
+    recordingPerLabel: 100,
+    batch: 25,
+    labels: [
+      "avanza",
+      "adelante",
+      "atras",
+      "frena",
+      "izquierda",
+      "derecha",
+      "reversa",
+    ],
+    totalLabels: 7,
+  });
+
+  const currentRecording = useRef({
+    labelIdx: 0,
+    timesRecorded: 0,
+    nearPause: 25,
+  });
 
   const handleToggleRecording = () => {
+    const { duration, batch, labels, recordingPerLabel, totalLabels } =
+      recordingProps.current;
+    let interval = 0;
+
     if (!isRecording) {
+      if (currentRecording.current.timesRecorded >= recordingPerLabel) {
+        currentRecording.current.timesRecorded = 0;
+        currentRecording.current.labelIdx++;
+      }
+
+      if (currentRecording.current.labelIdx >= totalLabels) return;
+
       audioRecorder.start();
       setIsRecording(true);
-    } else {
-      times.current++;
-      setIsRecording(false);
-      audioRecorder.stop().then((blob) => {
-        setAudiosRecorded(
-          audiosRecorded.concat({
-            name: `${names.current[0]}-${String(times.current).padStart(
-              4,
-              "0"
-            )}`,
-            url: URL.createObjectURL(blob),
-            blob,
-          })
-        );
-      });
+
+      setTimeout(() => {
+        audioRecorder.stop().then((blob) => {
+          currentRecording.current.timesRecorded++;
+          setAudiosRecorded(
+            audiosRecorded.concat({
+              name: `${labels[currentRecording.current.labelIdx]}-${String(
+                currentRecording.current.timesRecorded
+              ).padStart(4, "0")}`,
+              url: URL.createObjectURL(blob),
+              blob,
+            })
+          );
+          setIsRecording(false);
+        });
+      }, duration);
     }
   };
 
@@ -59,9 +74,10 @@ export function AudioRecord() {
     items-center"
     >
       <div className="flex flex-col gap-2 items-center">
-        <div>
+        <div className="flex gap-4">
           <span className="text-center">
-            Total: {times.current}/{recordingTimes.current}
+            Total: {currentRecording.current.timesRecorded}/
+            {recordingProps.current.recordingPerLabel}
           </span>
         </div>
 
@@ -98,6 +114,30 @@ export function AudioRecord() {
           />
         </button>
       </div>
+      <span className="text-2xl">
+        {isRecording ? (
+          <>
+            Diga:{" "}
+            <span className="font-bold">
+              {recordingProps.current.labels[currentRecording.current.labelIdx]}
+            </span>
+          </>
+        ) : (
+          <span>
+            Proxima:{" "}
+            <span className="font-bold">
+              {
+                recordingProps.current.labels[
+                  currentRecording.current.timesRecorded ===
+                  recordingProps.current.recordingPerLabel
+                    ? currentRecording.current.labelIdx + 1
+                    : currentRecording.current.labelIdx
+                ]
+              }
+            </span>
+          </span>
+        )}
+      </span>
     </div>
   );
 }

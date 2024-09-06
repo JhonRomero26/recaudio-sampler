@@ -1,7 +1,8 @@
 ---
+import Layout from "@/layouts/Layout.astro";
+import Hero from "@/components/Hero.astro";
 import { AudioRecord } from "@/components/react/AudioRecord";
-import Layout from "../layouts/Layout.astro";
-import { AudioList } from "@/components/react/AudioList";
+import { RecorderedListAudios } from "@/components/react/RecorderedListAudios";
 ---
 
 <Layout
@@ -10,11 +11,9 @@ import { AudioList } from "@/components/react/AudioList";
 >
 
 	<section>
-		<h1 class="text-dawn-pink-950 text-balance text-5xl font-bold text-center">Recaudio Sampler</h1>
-
+		<Hero />
 		<AudioRecord client:load />
-		
-		<AudioList client:load />
+		<RecorderedListAudios client:load />
 
 	</section>
 
