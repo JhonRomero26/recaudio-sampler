@@ -1,71 +1,47 @@
-import { MicrophoneIcon, SquareIcon } from "@/components/icons";
 import { useRecorderStore } from "@/store/useRecorderStore";
 import clsx from "clsx";
 import { useRef } from "react";
+import { RecordButton } from "./RecordButton";
+import { initialRecordingProgress, initialRecordingProps } from "@/utils/recording";
+
 
 export function AudioRecord() {
-  const {
-    isRecording,
-    audioRecorder,
-    audiosRecorded,
-    setAudiosRecorded,
-    setIsRecording,
-  } = useRecorderStore((store) => store);
+  const { isRecording, audioRecorder, audiosRecorded, setIsRecording, setAudiosRecorded } = useRecorderStore();
 
-  const recordingProps = useRef({
-    duration: 2000,
-    recordingPerLabel: 100,
-    batch: 25,
-    labels: [
-      "avanza",
-      "adelante",
-      "atras",
-      "frena",
-      "izquierda",
-      "derecha",
-      "reversa",
-    ],
-    totalLabels: 7,
-  });
+  const recordingProps = useRef(initialRecordingProps);
+  const currentRecording = useRef(initialRecordingProgress);
 
-  const currentRecording = useRef({
-    labelIdx: 0,
-    timesRecorded: 0,
-    nearPause: 25,
-  });
-
-  const handleToggleRecording = () => {
-    const { duration, batch, labels, recordingPerLabel, totalLabels } =
+  const handleToggleRecording = async () => {
+    const { duration, labels, recordingPerLabel, totalLabels } =
       recordingProps.current;
-    let interval = 0;
 
-    if (!isRecording) {
-      if (currentRecording.current.timesRecorded >= recordingPerLabel) {
-        currentRecording.current.timesRecorded = 0;
-        currentRecording.current.labelIdx++;
-      }
-
-      if (currentRecording.current.labelIdx >= totalLabels) return;
-
-      audioRecorder.start();
-      setIsRecording(true);
-
-      setTimeout(() => {
-        audioRecorder.stop().then((blob) => {
-          currentRecording.current.timesRecorded++;
-          setAudiosRecorded(
-            audiosRecorded.concat({
-              name: `${labels[currentRecording.current.labelIdx]}-${String(
-                currentRecording.current.timesRecorded
-              ).padStart(4, "0")}`,
-              url: URL.createObjectURL(blob),
-              blob,
-            })
-          );
-          setIsRecording(false);
-        });
-      }, duration);
+    if (isRecording) return
+    if (currentRecording.current.timesRecorded >= recordingPerLabel) {
+      currentRecording.current.timesRecorded = 0;
+      currentRecording.current.labelIdx++;
     }
+
+    if (currentRecording.current.labelIdx >= totalLabels) return;
+    
+    await audioRecorder.start();
+    setIsRecording(true);
+
+    setTimeout(() => {
+      audioRecorder.stop().then((blob) => {
+        currentRecording.current.timesRecorded++;
+        setAudiosRecorded(
+          audiosRecorded.concat({
+            name: `${labels[currentRecording.current.labelIdx]}-${String(
+              currentRecording.current.timesRecorded
+            ).padStart(4, "0")}`,
+            url: URL.createObjectURL(blob),
+            blob,
+          })
+        );
+        setIsRecording(false);
+      });
+    }, duration);
+    
   };
 
   return (
@@ -95,24 +71,7 @@ export function AudioRecord() {
       </div>
 
       <div className="flex items-center gap-8">
-        <button
-          onClick={handleToggleRecording}
-          title="Grabar"
-          className="btn btn-icon p-10 text-7xl"
-        >
-          <MicrophoneIcon
-            className={clsx(
-              "motion-safe:transition-transform",
-              isRecording ? "-rotate-90 opacity-0" : "opacity-100"
-            )}
-          />
-          <SquareIcon
-            className={clsx(
-              "absolute motion-safe:transition-transform",
-              isRecording ? "rotate-0 opacity-100" : "opacity-0 rotate-90"
-            )}
-          />
-        </button>
+       <RecordButton handleClick={handleToggleRecording} />
       </div>
       <span className="text-2xl">
         {isRecording ? (

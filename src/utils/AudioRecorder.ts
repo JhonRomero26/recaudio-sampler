@@ -1,5 +1,6 @@
 import { BrowserAPIError } from "@/errors/BrowserAPIError";
 
+
 export class AudioRecorder {
   #sampleRate: number = 16000;
   #blobs: Blob[] = [];
