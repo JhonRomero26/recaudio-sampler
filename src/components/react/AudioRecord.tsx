@@ -2,7 +2,7 @@ import { useRecorderStore } from "@/store/useRecorderStore";
 import clsx from "clsx";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RecordButton } from "./RecordButton";
-import { Toast } from "./Toast";
+import { Toast, type ToastVariant } from "./Toast";
 import { COMMANDS } from "@/utils/recording";
 import { sanitizeSpeaker } from "@/utils/wav";
 
@@ -29,17 +29,27 @@ export function AudioRecord() {
     resetSession,
   } = useRecorderStore();
 
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [toast, setToast] = useState<{ id: number; text: string } | null>(
-    null
-  );
+  const [toasts, setToasts] = useState<
+    { id: number; text: string; variant: ToastVariant }[]
+  >([]);
   const toastSeq = useRef(0);
   const restoredBannerShown = useRef(false);
 
-  const showToast = useCallback((text: string) => {
-    toastSeq.current += 1;
-    setToast({ id: toastSeq.current, text });
+  const showToast = useCallback(
+    (text: string, variant: ToastVariant = "info") => {
+      toastSeq.current += 1;
+      const id = toastSeq.current;
+      setToasts((prev) => [...prev, { id, text, variant }]);
+    },
+    []
+  );
+  const showError = useCallback(
+    (text: string) => showToast(text, "error"),
+    [showToast]
+  );
+  const dismissToast = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   useEffect(() => {
@@ -82,7 +92,6 @@ export function AudioRecord() {
 
   const handleSelect = async (i: number) => {
     if (isRecording || busy) return;
-    setError(null);
     await selectCommand(i);
   };
 
@@ -95,17 +104,17 @@ export function AudioRecord() {
 
     const already = s.audiosRecorded.filter((a) => a.label === cmd).length;
     if (already >= s.batch) {
-      setError(`Batch completo para “${cmd}”. Elegí otro comando.`);
+      showError(`Batch completo para “${cmd}”. Elegí otro comando.`);
       return;
     }
 
     const spk = sanitizeSpeaker(s.speaker);
     if (!spk) {
-      setError("Speaker inválido (letras/números).");
+      showError("Speaker inválido (letras/números).");
       return;
     }
     if (s.batch < 1) {
-      setError("Batch debe ser ≥ 1.");
+      showError("Batch debe ser ≥ 1.");
       return;
     }
 
@@ -118,7 +127,6 @@ export function AudioRecord() {
 
     setBusy(true);
     try {
-      setError(null);
       setIsRecording(true);
 
       const blob = await audioRecorder.recordExact(dur);
@@ -134,13 +142,21 @@ export function AudioRecord() {
         blob,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al grabar");
+      showError(e instanceof Error ? e.message : "Error al grabar");
       audioRecorder.cancel();
     } finally {
       setIsRecording(false);
       setBusy(false);
     }
-  }, [addAudio, audioRecorder, busy, lockSession, setIsRecording, setSpeaker]);
+  }, [
+    addAudio,
+    audioRecorder,
+    busy,
+    lockSession,
+    setIsRecording,
+    setSpeaker,
+    showError,
+  ]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -206,8 +222,7 @@ export function AudioRecord() {
       return;
     }
     await resetSession();
-    setToast(null);
-    setError(null);
+    setToasts([]);
   };
 
   // Always the same shell (SSR + first paint) — no loader swap that jumps layout.
@@ -218,13 +233,14 @@ export function AudioRecord() {
         className="fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2 px-4 pointer-events-none"
         aria-live="polite"
       >
-        {toast && (
+        {toasts.map((t) => (
           <Toast
-            key={toast.id}
-            message={toast.text}
-            onDismiss={() => setToast(null)}
+            key={t.id}
+            message={t.text}
+            variant={t.variant}
+            onDismiss={() => dismissToast(t.id)}
           />
-        )}
+        ))}
       </div>
 
       <div className="w-full max-w-lg rounded-2xl border border-dawn-pink-300 bg-dawn-pink-50/80 p-5 flex flex-col gap-4 shadow-sm">
@@ -390,15 +406,6 @@ export function AudioRecord() {
                       ? "Elegí otro comando"
                       : "…"}
           </span>
-        </div>
-
-        {/* Fixed-height error slot — no layout jump when messages appear */}
-        <div className="w-full min-h-10">
-          {error && (
-            <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2 w-full text-center">
-              {error}
-            </p>
-          )}
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3 min-h-28">
