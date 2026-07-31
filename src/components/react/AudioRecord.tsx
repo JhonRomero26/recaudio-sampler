@@ -2,6 +2,7 @@ import { useRecorderStore } from "@/store/useRecorderStore";
 import clsx from "clsx";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RecordButton } from "./RecordButton";
+import { Toast } from "./Toast";
 import { COMMANDS } from "@/utils/recording";
 import { sanitizeSpeaker } from "@/utils/wav";
 
@@ -30,18 +31,26 @@ export function AudioRecord() {
 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [banner, setBanner] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ id: number; text: string } | null>(
+    null
+  );
+  const toastSeq = useRef(0);
   const restoredBannerShown = useRef(false);
+
+  const showToast = useCallback((text: string) => {
+    toastSeq.current += 1;
+    setToast({ id: toastSeq.current, text });
+  }, []);
 
   useEffect(() => {
     if (restored && ready && !restoredBannerShown.current) {
       restoredBannerShown.current = true;
       const n = useRecorderStore.getState().audiosRecorded.length;
-      setBanner(
+      showToast(
         `Sesión restaurada · ${n} toma${n === 1 ? "" : "s"} en este dispositivo`
       );
     }
-  }, [restored, ready]);
+  }, [restored, ready, showToast]);
 
   const currentLabel = COMMANDS[labelIdx] ?? COMMANDS[0]!;
   const totalTarget = COMMANDS.length * batch;
@@ -124,7 +133,6 @@ export function AudioRecord() {
         url: URL.createObjectURL(blob),
         blob,
       });
-      setBanner(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al grabar");
       audioRecorder.cancel();
@@ -183,7 +191,7 @@ export function AudioRecord() {
     setBusy(true);
     try {
       const removed = await removeLast();
-      if (removed) setBanner(`Eliminada: ${removed.name}`);
+      if (removed) showToast(`Eliminada: ${removed.name}`);
     } finally {
       setBusy(false);
     }
@@ -198,32 +206,24 @@ export function AudioRecord() {
       return;
     }
     await resetSession();
-    setBanner(null);
+    setToast(null);
     setError(null);
   };
 
   // Always the same shell (SSR + first paint) — no loader swap that jumps layout.
   return (
     <div className="flex flex-col gap-6 items-center px-4 pb-8">
-      {/* Reserved slot so restore banner never shoves content down */}
-      <div className="w-full max-w-lg min-h-12 flex items-stretch">
-        {banner ? (
-          <div
-            role="status"
-            className="w-full rounded-lg border border-dawn-pink-400 bg-dawn-pink-50 px-4 py-3 text-sm text-dawn-pink-900 flex justify-between gap-3 items-start"
-          >
-            <span>{banner}</span>
-            <button
-              type="button"
-              className="text-dawn-pink-600 hover:text-dawn-pink-950 shrink-0"
-              onClick={() => setBanner(null)}
-              aria-label="Cerrar aviso"
-            >
-              ✕
-            </button>
-          </div>
-        ) : (
-          <div className="w-full" aria-hidden />
+      {/* Fixed overlay: notification doesn't shift page layout */}
+      <div
+        className="fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2 px-4 pointer-events-none"
+        aria-live="polite"
+      >
+        {toast && (
+          <Toast
+            key={toast.id}
+            message={toast.text}
+            onDismiss={() => setToast(null)}
+          />
         )}
       </div>
 
