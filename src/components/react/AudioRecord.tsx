@@ -104,7 +104,7 @@ export function AudioRecord() {
 
     const already = s.audiosRecorded.filter((a) => a.label === cmd).length;
     if (already >= s.batch) {
-      showError(`Batch completo para “${cmd}”. Elegí otro comando.`);
+      showError(`Batch completo para “${cmd}”. Elige otro comando.`);
       return;
     }
 
@@ -274,8 +274,8 @@ export function AudioRecord() {
           </label>
         </div>
         <p className="text-xs text-dawn-pink-700">
-          Tocá un comando · Espacio graba ya · {durationMs / 1000}s · 16 kHz WAV
-          · teclas 1–{COMMANDS.length}
+          Selecciona un comando · Espacio para grabar · {durationMs / 1000}s ·
+          16 kHz WAV · teclas 1–{COMMANDS.length}
         </p>
 
         <div className="flex flex-col gap-1.5">
@@ -357,16 +357,16 @@ export function AudioRecord() {
                 Sesión completa
               </p>
               <p className="text-2xl font-bold text-emerald-950">
-                Descargá el zip abajo
+                Descarga el zip a continuación
               </p>
             </>
           ) : (
             <>
               <p className="text-sm font-medium text-dawn-pink-700 mb-2">
                 {isRecording
-                  ? "Grabando… decí"
+                  ? "Grabando — pronuncia:"
                   : currentFull
-                    ? "Batch completo — elegí otro"
+                    ? "Batch completo — elige otro"
                     : "Comando seleccionado"}
               </p>
               <p
@@ -398,13 +398,13 @@ export function AudioRecord() {
               ? "Cargando sesión…"
               : isRecording
                 ? "Grabando…"
-                : canRecord
-                  ? "Espacio o clic → graba ya"
-                  : allDone
-                    ? "Listo"
-                    : currentFull
-                      ? "Elegí otro comando"
-                      : "…"}
+                  : canRecord
+                    ? "Espacio o clic → graba ya"
+                    : allDone
+                      ? "Listo"
+                      : currentFull
+                        ? "Elige otro comando"
+                        : "…"}
           </span>
         </div>
 
