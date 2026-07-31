@@ -7,27 +7,21 @@ interface Props {
 }
 
 const { title, description, image, canonical } = Astro.props
-
-const determineCanonicalURL = () => {
-  if (Astro.url.host.includes("localhost")) return "http://localhost:4321"
-  return canonical || Astro.url.pathname
-}
-
-const imageURL = new URL(image || '/og.png', Astro.url)
-// const canonicalURL = new URL(determineCanonicalURL(), Astro.site)
+const imageURL = new URL(image || "/og.png", Astro.url)
+const canonicalURL = canonical
+  ? new URL(canonical, Astro.site ?? Astro.url)
+  : new URL(Astro.url.pathname, Astro.site ?? Astro.url)
 ---
 
-<title>{title}</title>
-
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="canonical" href={canonicalURL} />
 
-<meta name="keywords" content="audio, recaudio, recorder, sampler, sample, jhonchinss">
+<meta name="keywords" content="audio, recaudio, recorder, sampler, command-voice, speech commands" />
 <meta name="description" content={description} />
-<meta name="viewport" content="width=device-width" />
-<!-- <meta name="canonical" content={canonicalURL} /> -->
 
-<!-- OpenGraph -->
 <meta property="og:image" content={imageURL} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
@@ -36,13 +30,9 @@ const imageURL = new URL(image || '/og.png', Astro.url)
 <meta property="og:site_name" content="Recaudio Sampler" />
 <meta property="og:locale" content="es" />
 
-<!-- Twitter -->
-<meta property="twitter:card" content="summary_large_image" />
-<meta property="twitter:image" content={imageURL} />
-<meta property="twitter:title" content={title} />
-<meta property="twitter:description" content={description} />
-<meta property="twitter:site" content="@jhonchin" />
-<meta property="twitter:creator" content="@" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content={imageURL} />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
 
 <meta name="robots" content="index, follow" />
-<meta name="googlebot" content="index, follow" />

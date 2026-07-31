@@ -1,25 +1,28 @@
+/** Mirrors command-voice/scripts/record_real_voice.py COMMANDS + defaults. */
+export const COMMANDS = [
+  "adelante",
+  "atras",
+  "derecha",
+  "frena",
+  "izquierda",
+  "lento",
+  "moderado",
+  "rapido",
+  "reversa",
+] as const;
+
+export type CommandLabel = (typeof COMMANDS)[number];
+
 export const initialRecordingProps = {
+  /** ms per take — command-voice default 2.0s */
   duration: 2000,
-  recordingPerLabel: 100,
-  batch: 25,
-  // labels: [
-  //   "avanza",
-  //   "adelante",
-  //   "atras",
-  //   "frena",
-  //   "izquierda",
-  //   "derecha",
-  //   "reversa",
-  // ],
-  labels: [
-      "escucha",
-      "desactivar",
-    ],
-  totalLabels: 2,
-}
+  /** takes per command (user-editable batch = --n) */
+  batch: 15,
+  labels: [...COMMANDS] as string[],
+  countdownMs: 1500,
+};
 
 export const initialRecordingProgress = {
   labelIdx: 0,
   timesRecorded: 0,
-  nearPause: 25,
-}
+};

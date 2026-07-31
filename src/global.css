@@ -1,10 +1,27 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-dawn-pink-50: #faf7f6;
+  --color-dawn-pink-100: #f2e9e4;
+  --color-dawn-pink-200: #eee1da;
+  --color-dawn-pink-300: #e1ccc0;
+  --color-dawn-pink-400: #cead9b;
+  --color-dawn-pink-500: #ba9079;
+  --color-dawn-pink-600: #a3775f;
+  --color-dawn-pink-700: #88624d;
+  --color-dawn-pink-800: #725342;
+  --color-dawn-pink-900: #60493c;
+  --color-dawn-pink-950: #33241c;
+}
 
 @layer base {
+  html {
+    /* Avoid scroll jump when fonts/layout settle */
+    scrollbar-gutter: stable;
+  }
+
   body {
-    @apply bg-dawn-pink-200 text-dawn-pink-900;
+    @apply bg-dawn-pink-200 text-dawn-pink-900 antialiased min-h-screen;
   }
 
   h1,
@@ -13,7 +30,7 @@
   h4,
   h5,
   h6 {
-    @apply text-gray-100;
+    @apply text-dawn-pink-950;
   }
 }
 
@@ -22,15 +39,24 @@
     @apply max-w-xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 
+  .field {
+    @apply w-full rounded-lg border border-dawn-pink-400 bg-white px-3 py-2.5 text-dawn-pink-950
+      placeholder:text-dawn-pink-400
+      focus:outline-none focus:ring-2 focus:ring-dawn-pink-500 focus:border-dawn-pink-500
+      disabled:bg-dawn-pink-100 disabled:text-dawn-pink-600 disabled:cursor-not-allowed;
+  }
+
   .btn {
-    @apply border border-dawn-pink-600 text-dawn-pink-600 hover:bg-dawn-pink-600 hover:text-white bg-transparent inline-flex items-center justify-center py-2 px-4 rounded transition-colors;
+    @apply border border-dawn-pink-600 text-dawn-pink-800 hover:bg-dawn-pink-600 hover:text-white
+      bg-white/70 inline-flex items-center justify-center py-2 px-4 rounded-lg
+      transition-colors font-medium gap-1.5;
   }
 
   .btn[disabled] {
-    @apply cursor-not-allowed hover:bg-transparent hover:text-dawn-pink-600 opacity-60;
+    @apply cursor-not-allowed hover:bg-white/70 hover:text-dawn-pink-800 opacity-50;
   }
 
   .btn-icon {
-    @apply p-4 inline-flex rounded-full;
+    @apply p-4 inline-flex rounded-full items-center justify-center;
   }
 }

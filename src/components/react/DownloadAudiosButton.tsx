@@ -1,33 +1,43 @@
 import JSZip from "jszip";
 import { useRecorderStore } from "@/store/useRecorderStore";
 import { DownloadIcon } from "@/components/icons";
+import { useState } from "react";
 import clsx from "clsx";
 
 export function DownloadAudiosButton() {
-  const { audiosRecorded } = useRecorderStore((store) => store);
-  const existAudios = audiosRecorded.length === 0;
+  const { audiosRecorded, speaker } = useRecorderStore();
+  const [zipping, setZipping] = useState(false);
+  const empty = audiosRecorded.length === 0;
 
-  const handleDownload = () => {
-    const zip = new JSZip();
-    audiosRecorded.forEach(({ name, blob }) => {
-      zip.file(`${name}.weba`, blob);
-    });
-    zip.generateAsync({ type: "blob" }).then((content) => {
+  const handleDownload = async () => {
+    if (empty || zipping) return;
+    setZipping(true);
+    try {
+      const zip = new JSZip();
+      for (const { path, blob } of audiosRecorded) {
+        zip.file(path, blob);
+      }
+      const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "audios.zip";
+      a.download = `dataset_real_${speaker || "voice"}.zip`;
       a.click();
-    });
+      URL.revokeObjectURL(url);
+    } finally {
+      setZipping(false);
+    }
   };
 
   return (
     <button
-      disabled={existAudios}
-      onClick={handleDownload}
-      className={clsx("btn  mb-4")}
+      type="button"
+      disabled={empty || zipping}
+      onClick={() => void handleDownload()}
+      className={clsx("btn text-sm gap-2")}
     >
-      <DownloadIcon /> Descargar
+      <DownloadIcon />
+      {zipping ? "Comprimiendo…" : "Descargar dataset"}
     </button>
   );
 }
