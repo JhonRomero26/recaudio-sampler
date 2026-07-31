@@ -6,13 +6,16 @@ import {
   resampleLinear,
 } from "@/utils/wav";
 
-/** Capture mono PCM via Web Audio, export 16 kHz PCM16 WAV for command-voice. */
+// Vite resolves this to a fingerprinted static asset URL at build time.
+const workletUrl = new URL("./pcmRecorderWorklet.js", import.meta.url);
+
+/** Capture mono PCM via Web Audio (AudioWorklet), export 16 kHz PCM16 WAV. */
 export class AudioRecorder {
   #sampleRate: number;
   #chunks: Float32Array[] = [];
   #context: AudioContext | null = null;
   #stream: MediaStream | null = null;
-  #processor: ScriptProcessorNode | null = null;
+  #node: AudioWorkletNode | null = null;
   #source: MediaStreamAudioSourceNode | null = null;
   #mute: GainNode | null = null;
 
@@ -35,25 +38,31 @@ export class AudioRecorder {
     });
 
     const context = new AudioContext();
+    await context.audioWorklet.addModule(workletUrl);
+
     const source = context.createMediaStreamSource(stream);
-    // ponytail: ScriptProcessor deprecated; fine for short fixed-length clips
-    const processor = context.createScriptProcessor(4096, 1, 1);
+    const node = new AudioWorkletNode(context, "pcm-recorder", {
+      numberOfInputs: 1,
+      numberOfOutputs: 1,
+      channelCount: 1,
+      channelCountMode: "explicit",
+    });
     const mute = context.createGain();
     mute.gain.value = 0;
 
     this.#chunks = [];
-    processor.onaudioprocess = (event) => {
-      this.#chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+    node.port.onmessage = (event: MessageEvent<Float32Array>) => {
+      this.#chunks.push(event.data);
     };
 
-    source.connect(processor);
-    processor.connect(mute);
+    source.connect(node);
+    node.connect(mute);
     mute.connect(context.destination);
 
     this.#stream = stream;
     this.#context = context;
     this.#source = source;
-    this.#processor = processor;
+    this.#node = node;
     this.#mute = mute;
   }
 
@@ -62,7 +71,7 @@ export class AudioRecorder {
     await this.start();
     await sleep(durationMs);
 
-    if (!this.#context || !this.#processor) {
+    if (!this.#context || !this.#node) {
       throw new BrowserAPIError("Not recording.");
     }
 
@@ -82,12 +91,13 @@ export class AudioRecorder {
   }
 
   #teardownGraph() {
-    this.#processor?.disconnect();
+    if (this.#node) this.#node.port.onmessage = null;
+    this.#node?.disconnect();
     this.#source?.disconnect();
     this.#mute?.disconnect();
     this.#stream?.getTracks().forEach((t) => t.stop());
     void this.#context?.close();
-    this.#processor = null;
+    this.#node = null;
     this.#source = null;
     this.#mute = null;
     this.#stream = null;
